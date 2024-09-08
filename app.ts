@@ -1,4 +1,5 @@
 import express from 'express'
+import cors from 'cors'
 import fileUpload from 'express-fileupload'
 import expressSession from 'express-session'
 import passport from 'passport'
@@ -10,6 +11,7 @@ require('./config/passport');
 
 const app = express();
 
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(fileUpload());
