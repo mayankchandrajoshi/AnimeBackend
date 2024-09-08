@@ -64,20 +64,28 @@ export const googleLoginCallback = catchAsyncErrors(async (req: Request, res: Re
         if (err) {
             return next(err); 
         }
-
+        const frontendUrl = decodeURIComponent(req.query.state as string);
+        
         if (!user) {
-            return res.status(400).json({ success: false, message: 'Authentication failed' });
+            return res.status(200).redirect(`${frontendUrl}?login_successful=false`);
         }
 
         req.logIn(user, (err) => {
             if (err) {
                 return next(err); 
             }
-            return res.json({ success: true, message: 'Logged in with Google successfully' });
+            return res.status(200).redirect(`${frontendUrl}?login_successful=true`);
         });
     })(req, res, next);
 });
 
+export const getUserDetails = catchAsyncErrors(async(req:Request,res:Response,next:NextFunction)=>{
+    const { user } = req as AuthenticatedRequest;
+    res.status(200).send({
+        success : true,
+        user
+    })
+})
 
 export const updateUser = catchAsyncErrors(async(req:Request,res:Response,next:NextFunction)=>{
 
