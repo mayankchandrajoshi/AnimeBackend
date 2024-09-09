@@ -18,7 +18,11 @@ const corsOptions: CorsOptionsDelegate = (req, callback) => {
     const origin = req.headers.origin;
     if (origin && allowedOrigins.includes(origin)) {
         callback(null, { origin: true, credentials: true });
-    } else {
+    }
+    else if (!origin) {
+        callback(null, { origin: false }); 
+    }
+    else {
         callback(new ErrorHandler('Not allowed by CORS',403));
     }
 };
