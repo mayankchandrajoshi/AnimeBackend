@@ -1,17 +1,29 @@
 import express from 'express'
-import cors from 'cors'
+import cors, { CorsOptionsDelegate } from 'cors'
 import fileUpload from 'express-fileupload'
 import expressSession from 'express-session'
 import passport from 'passport'
 import MongoStore from 'connect-mongo';
 import errorMiddleware from './middleware/error'
 import userRoutes from './routes/userRoute'
+import ErrorHandler from './utils/errorHandler'
 require("dotenv").config({ path: "config/.env" });
 require('./config/passport');
 
 const app = express();
 
-app.use(cors());
+const allowedOrigins = process.env.ALLOWED_ORIGINS!.split(',')
+
+const corsOptions: CorsOptionsDelegate = (req, callback) => {
+    const origin = req.headers.origin;
+    if (origin && allowedOrigins.includes(origin)) {
+        callback(null, { origin: true, credentials: true });
+    } else {
+        callback(new ErrorHandler('Not allowed by CORS',403));
+    }
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(fileUpload());
