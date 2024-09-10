@@ -7,10 +7,20 @@ import MongoStore from 'connect-mongo';
 import errorMiddleware from './middleware/error'
 import userRoutes from './routes/userRoute'
 import ErrorHandler from './utils/errorHandler'
+import connectDatabase from './config/database'
 require("dotenv").config({ path: "config/.env" });
 require('./config/passport');
+import { v2 as cloudinary } from 'cloudinary';
 
 const app = express();
+
+connectDatabase().then(()=>{
+    cloudinary.config({
+        cloud_name: process.env.CLOUDINARY_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET,
+    });
+});
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS!.split(',')
 
@@ -43,7 +53,8 @@ app.use(expressSession({
     cookie: { 
         httpOnly : true,
         maxAge: parseInt(process.env.SESSION_COOKIE_MAX_AGE!, 10) || 3 * 24 * 60 * 60 * 1000,
-        sameSite: 'none'
+        sameSite: 'none',
+        secure:  process.env.NODE_ENV === 'production'
     }
 }));
 app.use(passport.initialize());
