@@ -12,6 +12,12 @@ export const registerUser = catchAsyncErrors(async(req:Request,res:Response,next
     if(!req.body.avatar||req.body.avatar==="null"){
         return next(new ErrorHandler("Please enter valid photo",400));
     }
+    
+    const { name, email, password } :{ name:string,email:string,password:string } = req.body;
+
+    const user  = await User.findOne({email});
+
+    if(user) return next(new ErrorHandler("Email already in user",400));
 
     const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
         folder: "avatars",
@@ -19,8 +25,6 @@ export const registerUser = catchAsyncErrors(async(req:Request,res:Response,next
         height: 150,
         crop: "scale",
     });
-    
-    const { name, email, password } :{ name:string,email:string,password:string } = req.body;
 
     const salt = await bcrypt.genSalt(10);
 
