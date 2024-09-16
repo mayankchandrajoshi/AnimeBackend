@@ -6,6 +6,8 @@ import ErrorHandler from "../utils/errorHandler";
 import cloudinary from 'cloudinary';
 import passport from "passport";
 import { AuthenticatedRequest } from "../interfaces/requestInterface";
+import jwt from 'jsonwebtoken';
+import { UserInterface } from "../interfaces/userInterface";
 
 export const registerUser = catchAsyncErrors(async(req:Request,res:Response,next:NextFunction)=>{
     
@@ -17,7 +19,7 @@ export const registerUser = catchAsyncErrors(async(req:Request,res:Response,next
 
     const user  = await User.findOne({email});
 
-    if(user) return next(new ErrorHandler("Email already in user",400));
+    if(user) return next(new ErrorHandler("Email already in use",400));
 
     const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
         folder: "avatars",
@@ -47,39 +49,44 @@ export const registerUser = catchAsyncErrors(async(req:Request,res:Response,next
 })
 
 export const loginUser = catchAsyncErrors(async(req:Request, res:Response, next:NextFunction) => {
-    passport.authenticate('local', (err:any, user?:Express.User|false, info?:{message:string}) => {
-        if (err) {
-            return next(err); 
-        }
+
+        const { email, password } = req.body as { email : string,password : string };
+
+        const user = await User.findOne({ email }).select('+password');
+
         if (!user) {
-            return res.status(400).json({ success: false, message: info?.message });
+            return next(new ErrorHandler("Invalid email or password", 401));
         }
-        req.logIn(user, (err) => {
-            if (err) {
-                return next(err); 
-            }
-            return res.json({ success: true, message: 'Logged in successfully' });
-        });
-    })(req, res, next);
+
+        if (!user.password) {
+            return next(new ErrorHandler('Login using other methods', 401));
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+
+        if (!isMatch) {
+            return next(new ErrorHandler('Incorrect password.', 401));
+        }
+
+        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET!, { expiresIn: '2m' });
+        
+        return res.json({ success: true, token });
 })
 
 export const googleLoginCallback = catchAsyncErrors(async (req: Request, res: Response, next: NextFunction) => {
-    passport.authenticate('google', async (err: any, user?: Express.User | false) => {
+    passport.authenticate('google', async (err: any, user?: UserInterface | false) => {
         if (err) {
             return next(err); 
         }
         const frontendUrl = decodeURIComponent(req.query.state as string);
         
         if (!user) {
-            return res.status(200).redirect(`${frontendUrl}?login_successful=false`);
+            return res.status(400).redirect(`${frontendUrl}?token=null`);
         }
 
-        req.logIn(user, (err) => {
-            if (err) {
-                return next(err); 
-            }
-            return res.status(200).redirect(`${frontendUrl}?login_successful=true`);
-        });
+        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET!, { expiresIn: '7d' });
+
+        return res.status(200).redirect(`${frontendUrl}?token=${token}`);
     })(req, res, next);
 });
 
@@ -135,19 +142,4 @@ export const updateUser = catchAsyncErrors(async(req:Request,res:Response,next:N
         success:true,
         message: 'User updated successfully' 
     }))
-})
-
-export const logoutUser = catchAsyncErrors(async(req:Request,res:Response,next:NextFunction) => {
-    req.logout((err) => {
-        if (err) {
-            return next(err);
-        }
-        req.session.destroy((err) => {
-            if (err) {
-                return next(err);
-            }
-            res.clearCookie('connect.sid');
-            return res.status(200).json({ success: true, message: 'Logged out successfully' });
-        });
-    });
 })

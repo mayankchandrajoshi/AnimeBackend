@@ -18,6 +18,18 @@ const error = (err:any, req: Request, res: Response, next: NextFunction) => {
         err.statusCode=400;
     }
 
+    // JWT Expired error
+    if(err.name == 'TokenExpiredError') {
+        err.message = "Please Login again.";
+        err.statusCode = 401;
+    }
+
+    // Invalid JWT error
+    if (err.name === "JsonWebTokenError") {
+        err.message = `Invalid Login session. Please login again.`;
+        err.statusCode=400;
+    }
+
     res.status(err.statusCode).json({
         success: false,
         message: err.message

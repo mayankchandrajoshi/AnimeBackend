@@ -1,6 +1,6 @@
 import express, { NextFunction, Request, Response } from 'express'
 import passport from 'passport';
-import { getUserDetails, googleLoginCallback, loginUser, logoutUser, registerUser, updateUser } from '../controllers/userControllers'
+import { getUserDetails, googleLoginCallback, loginUser, registerUser, updateUser } from '../controllers/userControllers'
 import { isAuthenticated } from '../middleware/auth';
 import catchAsyncErrors from '../utils/catchAsyncErrors';
 
@@ -22,7 +22,5 @@ router.get('/google/callback',googleLoginCallback);
 router.get("/me",isAuthenticated,getUserDetails);
 
 router.patch("/user/update",isAuthenticated,updateUser);
-
-router.get("/logout",isAuthenticated,logoutUser);
 
 export default router;

@@ -1,32 +1,6 @@
 import passport from 'passport';
-import { Strategy as LocalStrategy } from 'passport-local';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import bcrypt from 'bcrypt';
 import User from '../models/userModel';
-
-// Local strategy for email and password
-passport.use(new LocalStrategy({ usernameField: 'email' }, async (email, password, done) => {
-    try {
-        const user = await User.findOne({ email }).select('+password');
-
-        if (!user) {
-            return done(null, false, { message: 'Incorrect email.' });
-        }
-
-        if (!user.password) {
-            return done(null, false, { message: 'Please Enter password' });
-        }
-
-        const isMatch = await bcrypt.compare(password, user.password);
-
-        if (!isMatch) {
-            return done(null, false, { message: 'Incorrect password.' });
-        }
-        return done(null, user);
-    } catch (err) {
-        return done(err);
-    }
-}));
 
 // Google strategy
 passport.use(new GoogleStrategy({
@@ -52,17 +26,3 @@ passport.use(new GoogleStrategy({
         done(err, undefined);
     }
 }));
-
-// Serialize and deserialize user
-passport.serializeUser((user: any, done) => {
-    done(null, user.id);
-});
-
-passport.deserializeUser(async (id, done) => {
-    try {
-        const user = await User.findById(id);
-        done(null, user);
-    } catch (err) {
-        done(err);
-    }
-});
