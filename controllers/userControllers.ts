@@ -38,7 +38,7 @@ export const registerUser = catchAsyncErrors(async(req:Request,res:Response,next
         password: hashedPassword,
         avatar: {
             public_id: myCloud.public_id,
-            url: myCloud.url,
+            url: myCloud.secure_url,
         },
     });
 
@@ -129,7 +129,7 @@ export const updateUser = catchAsyncErrors(async(req:Request,res:Response,next:N
 
         updatedUser.avatar = {
             public_id: myCloud.public_id,
-            url: myCloud.url,
+            url: myCloud.secure_url,
         }
     }
 
